@@ -6,12 +6,12 @@ import re
 from nltk.corpus import words
 english_words = set(words.words())
 # Load models once when the server starts
-tokenizer_A = AutoTokenizer.from_pretrained("./Model_A")
-model_A = AutoModelForSequenceClassification.from_pretrained("./Model_A")
+tokenizer_A = AutoTokenizer.from_pretrained("./model_A")
+model_A = AutoModelForSequenceClassification.from_pretrained("./model_A")
 model_A.eval()
 
-tokenizer_B = AutoTokenizer.from_pretrained("./Model_B")
-model_B = AutoModelForSequenceClassification.from_pretrained("./Model_B")
+tokenizer_B = AutoTokenizer.from_pretrained("./model_B")
+model_B = AutoModelForSequenceClassification.from_pretrained("./model_B")
 model_B.eval()
 def contains_real_word(text):
     tokens = re.findall(r"\b\w+\b", text.lower())
@@ -73,4 +73,5 @@ def index(request):
             })
 
     return render(request, "index.html", context)
+
 
