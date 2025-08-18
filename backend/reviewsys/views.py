@@ -12,7 +12,7 @@ from nltk.corpus import words
 
 english_words = set(words.words())
 
-MODEL_PATH = "C:/Users/viju1/Desktop/Aipro/final_model"
+MODEL_PATH = "../final_model"
 
 def contains_real_word(text):
     tokens = re.findall(r"\b\w+\b", text.lower())
