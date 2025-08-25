@@ -6,9 +6,10 @@ from .serializers import ReviewSerializer
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import os
+from django.db.models import Avg,Count
 import re
 from nltk.corpus import words
-
+from rest_framework.pagination import PageNumberPagination
 
 english_words = set(words.words())
 
@@ -42,7 +43,7 @@ class ReviewPredictionView(APIView):
         # Enhanced validations
         if is_invalid_input(review_text):
             return Response(
-                {"error": "Review must contain meaningful English words – not just symbols, numbers, or gibberish."},
+                {"error": "Review must contain meaningful English words - not just symbols, numbers, or gibberish."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -72,8 +73,11 @@ class ReviewPredictionView(APIView):
 class ReviewListAPIView(APIView):
     def get(self, request):
         reviews = Review.objects.all().order_by('-created_at')
-        serializer = ReviewSerializer(reviews, many=True)
-        return Response(serializer.data)
+        paginator = PageNumberPagination()
+        paginator.page_size = 8 
+        paginated_reviews = paginator.paginate_queryset(reviews, request)
+        serializer = ReviewSerializer(paginated_reviews, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class RecentReviewsAPIView(APIView):
@@ -81,3 +85,29 @@ class RecentReviewsAPIView(APIView):
         recent_reviews = Review.objects.all().order_by('-created_at')[:3]
         serializer = ReviewSerializer(recent_reviews, many=True)
         return Response(serializer.data)
+
+class ReviewStatsAPIView(APIView):
+    def get(self, request):
+        try:
+            rating_counts = (
+                Review.objects.values('predicted_rating')
+                .annotate(count=Count('predicted_rating'))
+                .order_by('-predicted_rating') 
+            )
+
+            rating_counts_dict = {item['predicted_rating']: item['count'] for item in rating_counts}
+            rating_data = [
+                {"star": i, "count": rating_counts_dict.get(i, 0)}
+                for i in range(5, 0, -1)
+            ]
+
+            avg_rating = Review.objects.aggregate(avg_rating=Avg('predicted_rating'))['avg_rating'] or 0
+
+            return Response({
+                "ratings": rating_data,
+                "average_rating": round(avg_rating, 1),
+                "total_reviews": sum(item["count"] for item in rating_data)
+            })
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
