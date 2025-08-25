@@ -1,15 +1,10 @@
 import { useState } from "react"
 import swal from 'sweetalert'
-import api from "../../../server/api";
+import api from "../../../server/api"
 
-type Response = {
-    review_text: string;
-    predicted_rating: string;
-}
 
 const useAddReview = () => {
     const [inputData, setInputData] = useState<string>("")
-    const [responeData, setResponeData] = useState<Response>()
     const [loading, setloading] = useState(false)
     const handleSubmit = async () => {
         if (!inputData || inputData.trim() === "") {
@@ -19,19 +14,17 @@ const useAddReview = () => {
 
         setloading(true)
         try {
-            const response = await api.post(`/reviews/create/`, { review_text: inputData })
-
-            setResponeData(response.data)
-            swal("Review Added")
+            await api.post(`/reviews/create/`, { review_text: inputData })
+            swal("Review Added Successfully")
+            setInputData("")
         } catch (error: any) {
-
-            swal(error.response?.data?.error || "Failed Add Review")
+            swal(error.respone?.data?.message || "Failed Add Review")
 
         } finally {
             setloading(false)
         }
     }
-    return { handleSubmit, inputData, setInputData, loading, responeData }
+    return { handleSubmit, inputData, setInputData, loading }
 }
 
 export default useAddReview
